@@ -31,10 +31,12 @@ export function calculateNaturalFrequencies(params: SystemParameters): ModalResu
     }
   });
 
-  // Use Inertia Matrix for rotational modes
   let inertiaMatrix: Matrix;
   try {
-    inertiaMatrix = new Matrix(params.inertiaMatrix);
+    inertiaMatrix = new Matrix(
+      params.inertiaMatrix.length,
+      params.inertiaMatrix[0].length
+    );
   } catch (error) {
     throw new Error("Invalid inertia matrix format.");
   }

@@ -5,36 +5,62 @@ import { SystemParameters } from '../types';
 import { calculateNaturalFrequencies, ModalResults } from '../utils/vibrationAnalysis';
 
 export default function Results() {
+  const [error, setError] = useState<string>(null);
   const [results, setResults] = useState<ModalResults | null>(null);
   const [parameters, setParameters] = useState<SystemParameters | null>(null);
 
   useEffect(() => {
     const storedParams = sessionStorage.getItem('systemParameters');
     if (storedParams) {
+      let calculatedResults = null
       const params = JSON.parse(storedParams);
       setParameters(params);
-      const calculatedResults = calculateNaturalFrequencies(params);
+      try {
+        calculatedResults = calculateNaturalFrequencies(params);
+        setError(null)
+      } catch (e) {
+        console.error("Calculation Error:", e); // Logs full error to console
+        setError(e?.message || "An unknown error occurred.");
+      }
       setResults(calculatedResults);
     }
   }, []);
 
-  if (!parameters || !results) {
+  if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">No parameters found</h1>
-          <Link 
-            to="/get-started" 
-            className="text-blue-600 hover:text-blue-700 flex items-center justify-center"
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center px-4">
+        <div className="bg-white shadow-lg rounded-lg p-6 max-w-lg w-full text-center border border-gray-200">
+          <h1 className="text-2xl font-semibold text-red-600 mb-4">Oops! Something went wrong</h1>
+          <p className="text-gray-700 text-lg">{error || "An unexpected error occurred."}</p>
+
+          <Link
+            to="/get-started"
+            className="mt-6 inline-flex items-center justify-center px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md transition duration-300 ease-in-out"
           >
-            <ArrowLeft className="h-5 w-5 mr-2" />
-            Return to configuration
+            <ArrowLeft className="h-5 w-5 mr-2"/>
+            Return to Configuration
           </Link>
         </div>
       </div>
     );
   }
 
+  if (!parameters || !results) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">No parameters found</h1>
+          <Link
+            to="/get-started"
+            className="text-blue-600 hover:text-blue-700 flex items-center justify-center"
+          >
+            <ArrowLeft className="h-5 w-5 mr-2"/>
+            Return to configuration
+          </Link>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
       <div className="max-w-4xl mx-auto px-4 py-8">
