@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, Download, Share2 } from 'lucide-react';
 import { SystemParameters } from '../types';
 import { calculateNaturalFrequencies, ModalResults } from '../utils/vibrationAnalysis';
-import * as numeric from 'numeric';
 
 export default function Results() {
   const [results, setResults] = useState<ModalResults | null>(null);
@@ -71,7 +70,7 @@ export default function Results() {
               </div>
               <div className="bg-blue-50 p-4 rounded-lg">
                 <h3 className="text-sm font-medium text-blue-900 mb-1">Number of Mounts</h3>
-                <p className="text-2xl font-bold text-blue-700">{parameters.mountingLocations.length}</p>
+                <p className="text-2xl font-bold text-blue-700">{parameters.mountingLocations?.length}</p>
               </div>
               <div className="bg-blue-50 p-4 rounded-lg">
                 <h3 className="text-sm font-medium text-blue-900 mb-1">Analysis Type</h3>
@@ -84,13 +83,13 @@ export default function Results() {
           <div className="bg-white rounded-2xl shadow-lg p-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Natural Frequencies</h2>
             <div className="space-y-4">
-              {results.naturalFrequencies.map((frequency, index) => (
+              {results.naturalFrequencies?.map((frequency, index) => (
                 <div key={index} className="flex items-center p-4 bg-gray-50 rounded-lg">
                   <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold">
                     {index + 1}
                   </div>
                   <div className="ml-6">
-                    <p className="text-lg font-semibold text-gray-900">{frequency.toFixed(1)} Hz</p>
+                    <p className="text-lg font-semibold text-gray-900">{frequency?.toFixed(1)} Hz</p>
                     <p className="text-gray-600">{results.modeDescriptions[index]}</p>
                   </div>
                 </div>

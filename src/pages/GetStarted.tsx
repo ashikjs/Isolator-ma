@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Save, Plus, Trash2, AlertCircle } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { SystemParameters } from '../types';
-import * as numeric from 'numeric';
+import {Matrix3x3, MountingLocation, SystemParameters} from '../types';
 
 const emptyMatrix: Matrix3x3 = [
-  ['1', '', ''],
-  ['', '1', ''],
-  ['', '', '1']
+  [1, '', ''],
+  ['', 1, ''],
+  ['', '', 1]
 ];
 
 const emptyLocation = { x: '0', y: '0', z: '0', stiffness_x: '1', stiffness_y: '1', stiffness_z: '1' };
