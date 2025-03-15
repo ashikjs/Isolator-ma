@@ -1,11 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { loadStripe } from '@stripe/stripe-js';
 import { ArrowLeft, Shield, AlertCircle } from 'lucide-react';
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+const publicKey: string = import.meta.env.VITE_STRIPE_PUBLIC_KEY || '';
+const priceId: string = import.meta.env.VITE_STRIPE_PRICE_ID || '';
+
+const stripePromise = loadStripe(publicKey);
 
 export default function Checkout() {
+  console.log('publicKey::', publicKey)
+  console.log('priceId::', priceId)
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -38,13 +43,15 @@ export default function Checkout() {
       console.log('Making request to create checkout session...');
       
       // Call your backend to create the Checkout Session
+      // TODO: For local
+      //  http://localhost:8888/.netlify/functions/create-checkout-session
       const response = await fetch('/.netlify/functions/create-checkout-session', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          priceId: import.meta.env.VITE_STRIPE_PRICE_ID,
+          priceId: priceId,
         }),
       });
       
