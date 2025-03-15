@@ -1,29 +1,34 @@
-import { Matrix, EigenvalueDecomposition, inverse } from 'ml-matrix';
-import { SystemParameters } from '../types';
+import {Matrix, EigenvalueDecomposition, inverse} from 'ml-matrix';
+import {SystemParameters} from '../types';
 
 export interface ModalResults {
   naturalFrequencies: number[];
   modeDescriptions: string[];
 }
 
+/**
+ * Calculates the natural frequencies of a system using mass and stiffness matrices.
+ */
 export function calculateNaturalFrequencies(params: SystemParameters): ModalResults {
   if (!params.mass || !params.mountingLocations || params.mountingLocations.length === 0) {
     throw new Error("Invalid input: mass and mounting locations are required.");
   }
 
+  // Convert mass input to a number and ensure it's positive
   const mass = parseFloat(params.mass as unknown as string);
   if (isNaN(mass) || mass <= 0) {
     throw new Error("Mass must be a positive number.");
   }
 
-  const numDOF = 6;
+  // Extract stiffness values from mounting locations
+  const numDOF = 6; // 6 Degrees of Freedom (3 translational, 3 rotational)
   const stiffnessMatrix = Matrix.zeros(numDOF, numDOF);
 
   params.mountingLocations.forEach(loc => {
     const stiffness = [
-      loc.stiffness_x ? Number(loc.stiffness_x) : 0,
-      loc.stiffness_y ? Number(loc.stiffness_y) : 0,
-      loc.stiffness_z ? Number(loc.stiffness_z) : 0
+      parseFloat(loc.stiffness_x as unknown as string) || 0,
+      parseFloat(loc.stiffness_y as unknown as string) || 0,
+      parseFloat(loc.stiffness_z as unknown as string) || 0
     ];
 
     for (let i = 0; i < 3; i++) {
@@ -31,38 +36,26 @@ export function calculateNaturalFrequencies(params: SystemParameters): ModalResu
     }
   });
 
-  let inertiaMatrix: Matrix;
-  try {
-    inertiaMatrix = new Matrix(
-      params.inertiaMatrix.length,
-      params.inertiaMatrix[0].length
-    );
-  } catch (error) {
-    throw new Error("Invalid inertia matrix format.");
-  }
-
-  // Apply inertia values to rotational stiffness
-  for (let i = 0; i < 3; i++) {
-    stiffnessMatrix.set(i + 3, i + 3, inertiaMatrix.get(i, i));
-  }
-
-  // Create mass matrix (translations) and inertia matrix (rotations)
+  // Create mass matrix as a diagonal matrix
   const massMatrix = Matrix.eye(numDOF).mul(mass);
-  for (let i = 3; i < 6; i++) {
-    massMatrix.set(i, i, inertiaMatrix.get(i - 3, i - 3));
-  }
 
   try {
+    // Compute the inverse of the mass matrix
     const invMassMatrix = inverse(massMatrix);
+
+    // Compute the system matrix (M⁻¹ * K)
     const systemMatrix = invMassMatrix.mmul(stiffnessMatrix);
 
+    // Eigenvalue decomposition to find natural frequencies
     const eigen = new EigenvalueDecomposition(systemMatrix);
     const eigenvalues = eigen.realEigenvalues;
 
+    // Compute natural frequencies (f = sqrt(λ) / (2π))
     const naturalFrequencies = eigenvalues.map(lambda =>
       lambda > 0 ? Math.sqrt(lambda) / (2 * Math.PI) : 0
     );
 
+    // Mode descriptions
     const modeDescriptions = [
       "Vertical Translation",
       "Lateral Translation",
@@ -72,7 +65,7 @@ export function calculateNaturalFrequencies(params: SystemParameters): ModalResu
       "Yaw"
     ];
 
-    return { naturalFrequencies, modeDescriptions };
+    return {naturalFrequencies, modeDescriptions};
   } catch (error) {
     throw new Error("Error computing natural frequencies: " + error.message);
   }
