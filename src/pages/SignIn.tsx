@@ -64,18 +64,18 @@ export default function SignIn() {
       setError(passwordError);
       return;
     }
-    console.log(`${domainUrl}/signin`)
+
     try {
-      // const { data, error } = await supabase.auth.signUp({
-      //   email,
-      //   password,
-      //   options: {
-      //     emailRedirectTo: `${domainUrl}/signin`,
-      //     data: {
-      //       full_name: name,
-      //     }
-      //   }
-      // });
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${domainUrl}/signin`,
+          data: {
+            full_name: name,
+          }
+        }
+      });
 
       if (error) throw error;
 
