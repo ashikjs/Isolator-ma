@@ -79,11 +79,11 @@ export default function SignIn() {
 
       if (error) throw error;
 
-      // if (data.user) {
-      //   setError('Success! You can now sign in with your credentials.');
-      //   setIsSignup(false)
-      //   setPassword(''); // Clear password after successful signup
-      // }
+      if (data.user) {
+        setError('Success! You can now sign in with your credentials.');
+        setIsSignup(false)
+        setPassword(''); // Clear password after successful signup
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred during sign up');
     } finally {
