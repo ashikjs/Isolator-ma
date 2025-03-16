@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import {Vibrate, Mail, Lock, AlertCircle, User} from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
@@ -11,7 +11,7 @@ const validatePassword = (password: string): string | null => {
 };
 
 export default function SignIn() {
-  const navigate = useNavigate();
+  const domainUrl = import.meta.env.VITE_URL as string
   const [isSignup, setIsSignup] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState('');
@@ -64,26 +64,26 @@ export default function SignIn() {
       setError(passwordError);
       return;
     }
-
+    console.log(`${domainUrl}/signin`)
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/signin`,
-          data: {
-            full_name: name,
-          }
-        }
-      });
+      // const { data, error } = await supabase.auth.signUp({
+      //   email,
+      //   password,
+      //   options: {
+      //     emailRedirectTo: `${domainUrl}/signin`,
+      //     data: {
+      //       full_name: name,
+      //     }
+      //   }
+      // });
 
       if (error) throw error;
 
-      if (data.user) {
-        setError('Success! You can now sign in with your credentials.');
-        setIsSignup(false)
-        setPassword(''); // Clear password after successful signup
-      }
+      // if (data.user) {
+      //   setError('Success! You can now sign in with your credentials.');
+      //   setIsSignup(false)
+      //   setPassword(''); // Clear password after successful signup
+      // }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred during sign up');
     } finally {
