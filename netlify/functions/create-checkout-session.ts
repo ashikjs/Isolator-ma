@@ -1,8 +1,8 @@
-import { Handler } from '@netlify/functions';
+import {Handler} from '@netlify/functions';
 import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2023-10-16', // Use the latest API version
+  apiVersion: '2023-10-16',
 });
 
 const headers = {
@@ -13,102 +13,86 @@ const headers = {
 };
 
 const handler: Handler = async (event) => {
-  // Handle OPTIONS request (for CORS preflight)
   if (event.httpMethod === 'OPTIONS') {
-    return {
-      statusCode: 200,
-      headers,
-      body: ''
-    };
+    return {statusCode: 200, headers, body: ''};
   }
 
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
       headers,
-      body: JSON.stringify({
-        error: 'Method not allowed'
-      })
+      body: JSON.stringify({error: 'Method not allowed'})
     };
   }
 
   try {
-    // Log for debugging
     console.log('Function called with event:', JSON.stringify(event));
-    
-    // Ensure we have a body
+
     if (!event.body) {
       return {
         statusCode: 400,
         headers,
-        body: JSON.stringify({
-          error: 'Request body is required'
-        })
+        body: JSON.stringify({error: 'Request body is required'})
       };
     }
 
-    // Parse the body and validate priceId
-    let priceId;
+    let priceId, userId, userEmail;
     try {
       const parsedBody = JSON.parse(event.body);
       priceId = parsedBody.priceId;
+      userId = parsedBody.userId; // Retrieve user ID from the request body
+      userEmail = parsedBody.userEmail; // Retrieve user email from the request body
+
       console.log('Received priceId:', priceId);
+      console.log('Received userId:', userId);
+      console.log('Received userEmail:', userEmail);
     } catch (e) {
       console.error('JSON parsing error:', e);
       return {
         statusCode: 400,
         headers,
-        body: JSON.stringify({
-          error: 'Invalid JSON in request body'
-        })
+        body: JSON.stringify({error: 'Invalid JSON in request body'})
       };
     }
 
-    if (!priceId) {
+    if (!priceId || !userId || !userEmail) {
       return {
         statusCode: 400,
         headers,
-        body: JSON.stringify({
-          error: 'Price ID is required'
-        })
+        body: JSON.stringify({error: 'Price ID, User ID, and User Email are required'})
       };
     }
 
     console.log('Creating Stripe session with price:', priceId);
-    
-    // Create a checkout session
+
+    // Create a Stripe Checkout session with user metadata
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1,
-        },
-      ],
+      customer_email: userEmail, // Automatically pre-fill email in payment form
+      line_items: [{price: priceId, quantity: 1}],
       mode: 'subscription',
-      success_url: `${process.env.URL || 'http://localhost:8888'}?success=true`,
-      cancel_url: `${process.env.URL || 'http://localhost:8888'}?canceled=true`,
+      success_url: `${process.env.URL || 'http://localhost:8888/checkout/'}?success=true`,
+      cancel_url: `${process.env.URL || 'http://localhost:8888/checkout/'}?canceled=true`,
+      metadata: {
+        user_id: userId, // Attach user ID to session metadata
+      },
     });
 
     console.log('Session created:', session.id);
-    
+
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify({
-        sessionId: session.id
-      })
+      body: JSON.stringify({sessionId: session.id})
     };
   } catch (error) {
     console.error('Function error:', error);
     return {
       statusCode: 500,
       headers,
-      body: JSON.stringify({
-        error: error instanceof Error ? error.message : 'Internal server error'
-      })
+      body: JSON.stringify({error: error instanceof Error ? error.message : 'Internal server error'})
     };
   }
 };
 
-export { handler };
+export {handler};

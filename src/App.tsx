@@ -19,8 +19,8 @@ import { supabase } from './lib/supabase';
 
 function Navigation() {
   const { user } = useAuth();
-  const calculationCount = parseInt(sessionStorage.getItem('calculationCount') || '0');
-  const isFreeTier = calculationCount < 3;
+  // const calculationCount = parseInt(sessionStorage.getItem('calculationCount') || '0');
+  // const isFreeTier = calculationCount < 3;
 
   return (
     <div className="flex items-center space-x-4">
@@ -36,14 +36,14 @@ function Navigation() {
         </div>
       ) : (
         <>
-          {!isFreeTier && (
+          {/*{!isFreeTier && (*/}
             <Link 
               to="/signin"
               className="text-gray-600 hover:text-gray-900"
             >
               Sign In
             </Link>
-          )}
+          {/*)}*/}
           <Link 
             to="/get-started"
             className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"

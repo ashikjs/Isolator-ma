@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { loadStripe } from '@stripe/stripe-js';
-import { ArrowLeft, Shield, AlertCircle } from 'lucide-react';
+import {useEffect, useState} from 'react';
+import {useNavigate} from 'react-router-dom';
+import {loadStripe} from '@stripe/stripe-js';
+import {ArrowLeft, Shield, AlertCircle} from 'lucide-react';
+import {supabase} from './../lib/supabase';
 
 const publicKey: string = import.meta.env.VITE_STRIPE_PUBLIC_KEY || '';
 const priceId: string = import.meta.env.VITE_STRIPE_PRICE_ID || '';
@@ -9,8 +10,6 @@ const priceId: string = import.meta.env.VITE_STRIPE_PRICE_ID || '';
 const stripePromise = loadStripe(publicKey);
 
 export default function Checkout() {
-  console.log('publicKey::', publicKey)
-  console.log('priceId::', priceId)
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -19,10 +18,18 @@ export default function Checkout() {
     // Check if this is a redirect back from Checkout
     const query = new URLSearchParams(window.location.search);
     if (query.get('success')) {
-      console.log('Order placed!');
-      // Clear the free tier usage count since they've upgraded
-      sessionStorage.removeItem('calculationCount');
-      navigate('/get-started');
+      setIsLoading(true)
+      verifyPayment().then(response => {
+        if (response) {
+          console.log('Order placed!');
+          // Clear the free tier usage count since they've upgraded
+          sessionStorage.removeItem('calculationCount');
+          navigate('/get-started');
+        } else {
+          setIsLoading(false)
+          console.error('Failed to pay for Order!');
+        }
+      });
     }
     if (query.get('canceled')) {
       console.log('Order canceled');
@@ -34,14 +41,18 @@ export default function Checkout() {
     try {
       setError(null);
       setIsLoading(true);
-  
+
       const stripe = await stripePromise;
       if (!stripe) {
         throw new Error('Failed to load Stripe');
       }
-  
+      const user = await supabase.auth.getUser();
+
+      if (!user || !user.data || !user.data.user) {
+        throw new Error("User not authenticated");
+      }
       console.log('Making request to create checkout session...');
-      
+
       // Call your backend to create the Checkout Session
       // TODO: For local
       //  http://localhost:8888/.netlify/functions/create-checkout-session
@@ -52,16 +63,18 @@ export default function Checkout() {
         },
         body: JSON.stringify({
           priceId: priceId,
+          userId: user.data.user.id,
+          userEmail: user.data.user.email,
         }),
       });
-      
-      console.log('Response status:', response.status);
-      
+
+      // console.log('Response status:', response.status);
+
       // Important: First check if response is ok before trying to parse JSON
       if (!response.ok) {
         const errorText = await response.text();
         console.error('Error response body:', errorText);
-        
+
         let errorMessage = 'Failed to create checkout session';
         try {
           const errorData = JSON.parse(errorText);
@@ -69,13 +82,13 @@ export default function Checkout() {
         } catch (e) {
           // If parsing fails, use the raw text
         }
-        
+
         throw new Error(errorMessage);
       }
-      
+
       const responseText = await response.text();
       console.log('Response text:', responseText);
-      
+
       let data;
       try {
         data = JSON.parse(responseText);
@@ -83,18 +96,18 @@ export default function Checkout() {
         console.error('Failed to parse JSON:', e);
         throw new Error('Invalid response from server');
       }
-  
+
       if (!data?.sessionId) {
         console.error('Missing sessionId in response:', data);
         throw new Error('Invalid response from server: missing session ID');
       }
-  
+
       console.log('Redirecting to Stripe checkout...');
       // Redirect to Checkout
-      const { error: stripeError } = await stripe.redirectToCheckout({
+      const {error: stripeError} = await stripe.redirectToCheckout({
         sessionId: data.sessionId,
       });
-  
+
       if (stripeError) {
         throw stripeError;
       }
@@ -106,6 +119,38 @@ export default function Checkout() {
     }
   };
 
+  const checkUserSubscription = async () => {
+    const user = await supabase.auth.getUser();
+    if (!user || !user.data || !user.data.user) {
+      return false;
+    }
+    const {data, error} = await supabase
+      .from("payments")
+      // .select("status, session_id, amount")
+      .select("status")
+      .eq("user_id", user.data.user.id)
+      .eq("status", 'paid')
+      .order("created_at", {ascending: false})
+      .limit(1)
+      .single();
+
+    if (error) {
+      console.error("Supabase query error:", error);
+    } else {
+      console.log("Latest paid subscription:", data);
+    }
+
+    return !!data;
+  };
+
+  const verifyPayment = async () => {
+    return await checkUserSubscription();
+    // console.log('isSubscribed":: ', isSubscribed)
+    // if (isSubscribed) {
+    //   navigate("/");
+    // }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
       <div className="max-w-3xl mx-auto px-4 py-16">
@@ -113,7 +158,7 @@ export default function Checkout() {
           onClick={() => navigate('/')}
           className="inline-flex items-center text-blue-600 hover:text-blue-700 mb-12"
         >
-          <ArrowLeft className="h-5 w-5 mr-2" />
+          <ArrowLeft className="h-5 w-5 mr-2"/>
           Back to Home
         </button>
 
@@ -121,7 +166,7 @@ export default function Checkout() {
           <div className="px-8 py-12">
             {error && (
               <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 flex items-start">
-                <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 mr-3 flex-shrink-0" />
+                <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 mr-3 flex-shrink-0"/>
                 <div>
                   <h3 className="text-red-800 font-medium">Payment Error</h3>
                   <p className="text-red-700 mt-1">{error}</p>
@@ -135,21 +180,21 @@ export default function Checkout() {
 
             <div className="space-y-6 mb-12">
               <div className="flex items-center">
-                <Shield className="h-6 w-6 text-blue-500 mr-4" />
+                <Shield className="h-6 w-6 text-blue-500 mr-4"/>
                 <div>
                   <h3 className="font-semibold text-gray-900">Unlimited Calculations</h3>
                   <p className="text-gray-600">No more restrictions on frequency predictions</p>
                 </div>
               </div>
               <div className="flex items-center">
-                <Shield className="h-6 w-6 text-blue-500 mr-4" />
+                <Shield className="h-6 w-6 text-blue-500 mr-4"/>
                 <div>
                   <h3 className="font-semibold text-gray-900">Advanced Analysis</h3>
                   <p className="text-gray-600">Get detailed system analysis and recommendations</p>
                 </div>
               </div>
               <div className="flex items-center">
-                <Shield className="h-6 w-6 text-blue-500 mr-4" />
+                <Shield className="h-6 w-6 text-blue-500 mr-4"/>
                 <div>
                   <h3 className="font-semibold text-gray-900">Priority Support</h3>
                   <p className="text-gray-600">Access to email support for your questions</p>
@@ -169,8 +214,8 @@ export default function Checkout() {
                 onClick={handleCheckout}
                 disabled={isLoading}
                 className={`w-full py-4 px-8 rounded-lg font-semibold transition-colors ${
-                  isLoading 
-                    ? 'bg-gray-400 cursor-not-allowed' 
+                  isLoading
+                    ? 'bg-gray-400 cursor-not-allowed'
                     : 'bg-blue-600 hover:bg-blue-700 text-white'
                 }`}
               >
