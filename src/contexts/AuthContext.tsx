@@ -1,41 +1,58 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
+import {createContext, useContext, useEffect, useState} from "react";
+import {User} from "@supabase/supabase-js";
+import {supabase} from "../lib/supabase";
+import {checkSubscription} from "./../utils/subscription.ts";
 
 interface AuthContextType {
   user: User | null;
+  isSubscribed: boolean;
   loading: boolean;
 }
 
-const AuthContext = createContext<AuthContextType>({ user: null, loading: true });
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  isSubscribed: false,
+  loading: true,
+});
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export function AuthProvider({children}: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [isSubscribed, setIsSubscribed] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check active sessions and sets the user
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const checkUser = async () => {
+      const {data: {session}} = await supabase.auth.getSession();
       setUser(session?.user ?? null);
+      if (session?.user) {
+        await checkSubscription(session.user.id);
+      }
       setLoading(false);
-    });
+    };
 
-    // Listen for changes on auth state (sign in, sign out, etc.)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    checkUser();
+
+    // Listen for auth state changes
+    const {data: {subscription}} = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          await checkSubscription(session.user.id);
+        } else {
+          setIsSubscribed(false);
+        }
+        setLoading(false);
+      }
+    );
 
     return () => subscription.unsubscribe();
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading }}>
+    <AuthContext.Provider value={{user, isSubscribed, loading}}>
       {children}
     </AuthContext.Provider>
   );
 }
 
-export const useAuth = () => {
-  return useContext(AuthContext);
-};
+export const useAuth = () => useContext(AuthContext);

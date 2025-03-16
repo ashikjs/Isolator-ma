@@ -3,6 +3,7 @@ import {useNavigate} from 'react-router-dom';
 import {loadStripe} from '@stripe/stripe-js';
 import {ArrowLeft, Shield, AlertCircle} from 'lucide-react';
 import {supabase} from './../lib/supabase';
+import {useAuth} from "./../contexts/AuthContext.tsx";
 
 const publicKey: string = import.meta.env.VITE_STRIPE_PUBLIC_KEY || '';
 const priceId: string = import.meta.env.VITE_STRIPE_PRICE_ID || '';
@@ -10,11 +11,16 @@ const priceId: string = import.meta.env.VITE_STRIPE_PRICE_ID || '';
 const stripePromise = loadStripe(publicKey);
 
 export default function Checkout() {
+  const { isSubscribed } = useAuth();
+
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
+    if (isSubscribed) {
+      navigate('/');
+    }
     // Check if this is a redirect back from Checkout
     const query = new URLSearchParams(window.location.search);
     if (query.get('success')) {
@@ -35,7 +41,7 @@ export default function Checkout() {
       console.log('Order canceled');
       navigate('/');
     }
-  }, [navigate]);
+  }, [navigate, isSubscribed]);
 
   const handleCheckout = async () => {
     try {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, Save, Plus, Trash2, AlertCircle } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import {Matrix3x3, MountingLocation, SystemParameters} from '../types';
@@ -11,7 +11,8 @@ const emptyMatrix: Matrix3x3 = [
 
 const emptyLocation = { x: '0', y: '0', z: '0', stiffness_x: '1', stiffness_y: '1', stiffness_z: '1' };
 
-export default function GetStarted() {
+export default function GetStarted({isPaid}: any) {
+
   const navigate = useNavigate();
   const [usageCount, setUsageCount] = useState(0);
   const [parameters, setParameters] = useState<SystemParameters>({
@@ -22,15 +23,20 @@ export default function GetStarted() {
   });
 
   useEffect(() => {
-    const count = parseInt(sessionStorage.getItem('calculationCount') || '0');
-    setUsageCount(count);
-  }, []);
+    console.log('isSubscribed.GetStarted:: ', isPaid)
+    if (isPaid) {
+      setUsageCount(0);
+    } else {
+      const count = parseInt(sessionStorage.getItem('calculationCount') || '0');
+      setUsageCount(count);
+    }
+  }, [isPaid]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (usageCount >= 3) {
-      return; // Don't proceed if limit reached
+    if (usageCount >= 3 && !isPaid) {
+      return;
     }
 
     // Increment usage count
@@ -294,7 +300,7 @@ export default function GetStarted() {
               >
                 <Save className="h-5 w-5 mr-2" />
                 Calculate Results
-                {usageCount < 3 && <span className="ml-2 text-sm">({3 - usageCount} remaining)</span>}
+                {(usageCount < 3 && !isPaid) && <span className="ml-2 text-sm">({3 - usageCount} remaining)</span>}
               </button>
             </div>
           </form>

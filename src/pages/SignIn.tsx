@@ -47,7 +47,8 @@ export default function SignIn() {
       if (error) throw error;
 
       if (data.user) {
-        navigate('/get-started');
+        // navigate('/get-started');
+        window.location = '/';
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred during sign in');

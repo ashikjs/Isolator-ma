@@ -4,7 +4,7 @@ import { ArrowLeft, Download, Share2 } from 'lucide-react';
 import { SystemParameters } from '../types';
 import { calculateNaturalFrequencies, ModalResults } from '../utils/vibrationAnalysis';
 
-export default function Results() {
+export default function Results({isPaid}: any) {
   const [error, setError] = useState<string>(null);
   const [results, setResults] = useState<ModalResults | null>(null);
   const [parameters, setParameters] = useState<SystemParameters | null>(null);
