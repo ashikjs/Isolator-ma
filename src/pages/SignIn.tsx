@@ -11,7 +11,7 @@ const validatePassword = (password: string): string | null => {
 };
 
 export default function SignIn() {
-  const domainUrl = import.meta.env.VITE_URL as string
+  const domainUrl = import.meta.env.VITE_APP_DOMAIN_URL as string || 'https://isolator.netlify.app'
   const [isSignup, setIsSignup] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState('');
