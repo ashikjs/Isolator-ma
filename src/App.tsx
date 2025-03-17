@@ -81,6 +81,9 @@ function App() {
       if (session?.user) {
         const isSubscribed = await checkSubscription(session.user.id);
         setIsPaid(isSubscribed);
+        if (isSubscribed) {
+          sessionStorage.setItem('calculationCount', '0');
+        }
       }
     };
 
@@ -92,18 +95,18 @@ function App() {
       <Routes>
         <Route path="/signin" element={<SignIn/>}/>
         <Route path="/get-started" element={
-          <ProtectedRoute requireAuth={false}>
+          <ProtectedRoute requireAuth={false} isPaid={isPaid}>
             <GetStarted isPaid={isPaid}/>
           </ProtectedRoute>
         }/>
         <Route path="/results" element={
-          <ProtectedRoute requireAuth={false}>
+          <ProtectedRoute requireAuth={false} isPaid={isPaid}>
             <Results isPaid={isPaid}/>
           </ProtectedRoute>
         }/>
         <Route path="/checkout" element={
           <ProtectedRoute requireAuth={true}>
-            <Checkout/>
+            <Checkout isPaid={isPaid}/>
           </ProtectedRoute>
         }/>
 

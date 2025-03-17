@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import {Link, useNavigate} from 'react-router-dom';
 import {Vibrate, Mail, Lock, AlertCircle, User} from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
@@ -11,6 +11,7 @@ const validatePassword = (password: string): string | null => {
 };
 
 export default function SignIn() {
+  const navigate = useNavigate();
   const domainUrl = import.meta.env.VITE_APP_DOMAIN_URL as string || 'https://isolator.netlify.app'
   const [isSignup, setIsSignup] = useState(false);
   const [name, setName] = useState("");
@@ -47,8 +48,7 @@ export default function SignIn() {
       if (error) throw error;
 
       if (data.user) {
-        // navigate('/get-started');
-        window.location = '/';
+        navigate('/');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred during sign in');

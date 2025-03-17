@@ -1,17 +1,37 @@
-import { Navigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import {Navigate} from 'react-router-dom';
+import {useEffect, useState} from "react";
+
+import {useAuth} from '../contexts/AuthContext';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requireAuth?: boolean;
+  isPaid?: boolean;
 }
 
-export default function ProtectedRoute({ children, requireAuth = true }: ProtectedRouteProps) {
-  const { user, loading } = useAuth();
-  const calculationCount = parseInt(sessionStorage.getItem('calculationCount') || '0');
-  const isFreeTier = calculationCount < 3;
+export default function ProtectedRoute({children, requireAuth = true, isPaid = false}: ProtectedRouteProps) {
+  const {user, loading} = useAuth();
+  const [isFreeTier, setIsFreeTier] = useState(false);
+  const [timeoutReached, setTimeoutReached] = useState(false);
 
-  if (loading) {
+  // useEffect(() => {
+  //   console.log("Auth State:", {user, loading});
+  // }, [user, loading]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setTimeoutReached(true);
+    }, 7000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    const calculationCount: number = parseInt(sessionStorage.getItem('calculationCount') || '0');
+    setIsFreeTier(calculationCount < 3);
+  }, []);
+
+  if (loading && !timeoutReached && !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -19,11 +39,8 @@ export default function ProtectedRoute({ children, requireAuth = true }: Protect
     );
   }
 
-  // Allow access if:
-  // 1. User is authenticated, OR
-  // 2. It's free tier and auth is not explicitly required
-  if (!user && (!isFreeTier || requireAuth)) {
-    return <Navigate to="/signin" />;
+  if (!user && !isPaid && (!isFreeTier || requireAuth)) {
+    return <Navigate to="/signin"/>;
   }
 
   return <>{children}</>;
