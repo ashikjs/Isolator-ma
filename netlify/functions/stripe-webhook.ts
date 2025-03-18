@@ -43,7 +43,6 @@ const handler: Handler = async (event) => {
 
     console.log("Received checkout session:", session);
 
-    // Insert payment details into Supabase
     const { data, error } = await supabase.from("payments").insert([
       {
         user_id: session.metadata.user_id,
@@ -55,8 +54,7 @@ const handler: Handler = async (event) => {
       },
     ]);
 
-    // Log data and errors from Supabase
-    console.log("Supabase response:", { data, error });
+    // console.log("Supabase payments response:", { data, error });
 
     if (error) {
       console.error("Supabase insert error:", error);
@@ -67,6 +65,24 @@ const handler: Handler = async (event) => {
     }
 
     console.log("Payment stored successfully:", data);
+
+    // Update the user's table to set the is_paid flag to true
+    const { data: userData, error: userError } = await supabase
+      .from("users")
+      .update({ is_paid: true })
+      .eq("id", session.metadata.user_id);
+
+    // console.log("Supabase users update response:", { userData, userError });
+
+    if (userError) {
+      console.error("Error updating user payment status:", userError);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: "User update failed", details: userError }),
+      };
+    }
+
+    console.log("User payment status updated successfully:", userData);
   }
 
   return { statusCode: 200, body: "Webhook received" };

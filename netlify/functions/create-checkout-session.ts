@@ -43,9 +43,9 @@ const handler: Handler = async (event) => {
       userId = parsedBody.userId; // Retrieve user ID from the request body
       userEmail = parsedBody.userEmail; // Retrieve user email from the request body
 
-      console.log('Received priceId:', priceId);
-      console.log('Received userId:', userId);
-      console.log('Received userEmail:', userEmail);
+      // console.log('Received priceId:', priceId);
+      // console.log('Received userId:', userId);
+      // console.log('Received userEmail:', userEmail);
     } catch (e) {
       console.error('JSON parsing error:', e);
       return {
@@ -68,13 +68,13 @@ const handler: Handler = async (event) => {
     // Create a Stripe Checkout session with user metadata
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
-      customer_email: userEmail, // Automatically pre-fill email in payment form
+      customer_email: userEmail,
       line_items: [{price: priceId, quantity: 1}],
       mode: 'subscription',
-      success_url: `${process.env.URL || 'http://localhost:8888/checkout/'}?success=true`,
-      cancel_url: `${process.env.URL || 'http://localhost:8888/checkout/'}?canceled=true`,
+      success_url: `${process.env.STRIPE_PAYMENT_URL || 'http://localhost:8888/checkout/'}?success=true`,
+      cancel_url: `${process.env.STRIPE_PAYMENT_URL || 'http://localhost:8888/checkout/'}?canceled=true`,
       metadata: {
-        user_id: userId, // Attach user ID to session metadata
+        user_id: userId,
       },
     });
 

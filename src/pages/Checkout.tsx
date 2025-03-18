@@ -30,6 +30,7 @@ export default function Checkout({ isPaid }) {
           sessionStorage.removeItem('calculationCount');
           navigate('/get-started');
         } else {
+          setError('Failed to verify payment')
           setIsLoading(false)
           console.error('Failed to pay for Order!');
         }
@@ -91,7 +92,7 @@ export default function Checkout({ isPaid }) {
       }
 
       const responseText = await response.text();
-      console.log('Response text:', responseText);
+      // console.log('Response text:', responseText);
 
       let data;
       try {
