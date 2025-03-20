@@ -23,12 +23,14 @@ export default function Checkout({ isPaid }) {
     const query = new URLSearchParams(window.location.search);
     if (query.get('success')) {
       setIsLoading(true)
-      verifyPayment().then(response => {
+      checkUserSubscription().then(response => {
         if (response) {
-          console.log('Order placed!');
+          console.log('Order placed!', response);
           // Clear the free tier usage count since they've upgraded
           sessionStorage.removeItem('calculationCount');
-          navigate('/get-started');
+          setError('')
+          navigate('/');
+          setIsLoading(false)
         } else {
           setError('Failed to verify payment')
           setIsLoading(false)
@@ -146,14 +148,6 @@ export default function Checkout({ isPaid }) {
     }
 
     return !!data;
-  };
-
-  const verifyPayment = async () => {
-    return await checkUserSubscription();
-    // console.log('isSubscribed":: ', isSubscribed)
-    // if (isSubscribed) {
-    //   navigate("/");
-    // }
   };
 
   return (

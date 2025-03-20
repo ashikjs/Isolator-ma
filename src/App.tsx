@@ -26,14 +26,15 @@ function Navigation() {
   const handleSignOut = async () => {
 
     try {
-      const { error } = await supabase.auth.signOut();
+      const {error} = await supabase.auth.signOut();
       if (error) {
         console.error("Error signing out:", error.message);
       } else {
+        localStorage.removeItem('isPaidUser')
         console.log("User signed out successfully");
         window.location.reload(); // Force a refresh to clear state
       }
-    }catch (e) {
+    } catch (e) {
       console.log(e)
     }
   };
@@ -76,6 +77,12 @@ function App() {
   const [isPaid, setIsPaid] = useState<boolean>(false);
 
   useEffect(() => {
+    const isPaidUser: string = localStorage.getItem('isPaidUser')
+    if (isPaidUser) {
+      setIsPaid(isPaidUser === 'true')
+      if (isPaidUser === 'true') sessionStorage.setItem('calculationCount', '0')
+    }
+
     const fetchSubscription = async () => {
       const {data: {session}, error} = await supabase.auth.getSession();
       if (session?.user) {

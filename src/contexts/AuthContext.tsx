@@ -21,11 +21,18 @@ export function AuthProvider({children}: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const isPaidUser: string = localStorage.getItem('isPaidUser')
+    if (isPaidUser) {
+      setIsSubscribed(isPaidUser === 'true')
+      if (isPaidUser === 'true') sessionStorage.setItem('calculationCount', '0')
+    }
+
     const checkUser = async () => {
       const {data: {session}} = await supabase.auth.getSession();
       setUser(session?.user ?? null);
       if (session?.user) {
-        await checkSubscription(session.user.id);
+       const isSubscribed =  await checkSubscription(session.user.id);
+        setIsSubscribed(isSubscribed)
       }
       setLoading(false);
     };
@@ -38,6 +45,8 @@ export function AuthProvider({children}: { children: React.ReactNode }) {
         setUser(session?.user ?? null);
         if (session?.user) {
           await checkSubscription(session.user.id);
+          const isSubscribed =  await checkSubscription(session.user.id);
+          setIsSubscribed(isSubscribed)
         } else {
           setIsSubscribed(false);
         }

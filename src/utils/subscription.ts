@@ -7,7 +7,7 @@ import { supabase } from "../lib/supabase";
  */
 export const checkSubscription = async (userId: string): Promise<boolean> => {
   try {
-    const { data, error } = await supabase
+    const { data, error }: any = await supabase
       .from("payments")
       .select("status")
       .eq("user_id", userId)
@@ -17,12 +17,19 @@ export const checkSubscription = async (userId: string): Promise<boolean> => {
       .maybeSingle();
 
     if (error) {
-      console.error("Error fetching subscription:", error);
-      return false; // Return false if there's an error
+      console.log("Error fetching subscription:", error);
+      return false;
     }
 
     console.log("Subscription status:", data);
-    return !!data;
+
+    if (data?.status === 'paid') {
+      localStorage.setItem("isPaidUser", 'true');
+      return true
+    } else {
+      localStorage.setItem("isPaidUser", 'false');
+      return false
+    }
   } catch (err) {
     console.error("Unexpected error checking subscription:", err);
     return false;

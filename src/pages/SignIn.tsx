@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import {useEffect, useState} from 'react';
 import {Link, useNavigate} from 'react-router-dom';
 import {Vibrate, Mail, Lock, AlertCircle, User} from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import {checkSubscription} from "./../utils/subscription.ts";
 
 const validatePassword = (password: string): string | null => {
   if (password.length < 6) {
@@ -11,7 +12,7 @@ const validatePassword = (password: string): string | null => {
 };
 
 export default function SignIn() {
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   const domainUrl = import.meta.env.VITE_APP_DOMAIN_URL as string || 'https://isolator.netlify.app'
   const [isSignup, setIsSignup] = useState(false);
   const [name, setName] = useState("");
@@ -20,6 +21,10 @@ export default function SignIn() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+
+  useEffect(() => {
+    localStorage.removeItem('isPaidUser')
+  }, []);
 
   const handleAuth = async (e) => {
     e.preventDefault();
@@ -48,7 +53,10 @@ export default function SignIn() {
       if (error) throw error;
 
       if (data.user) {
-        navigate('/');
+        const isSubscribed = await checkSubscription(data.user.id);
+        console.log('isSubscribed:::', isSubscribed)
+        // navigate('/');
+        window.location = '/'
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred during sign in');
@@ -82,7 +90,7 @@ export default function SignIn() {
       if (data.user) {
         setError('Success! You can now sign in with your credentials.');
         setIsSignup(false)
-        setPassword(''); // Clear password after successful signup
+        setPassword('');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred during sign up');
