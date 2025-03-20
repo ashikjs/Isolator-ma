@@ -1,6 +1,6 @@
-import { Handler } from "@netlify/functions";
+import {Handler} from "@netlify/functions";
 import Stripe from "stripe";
-import { createClient } from "@supabase/supabase-js";
+import {createClient} from "@supabase/supabase-js";
 
 // Load environment variables
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
@@ -35,15 +35,15 @@ const handler: Handler = async (event) => {
     );
   } catch (err: any) {
     console.error("Webhook signature verification failed:", err);
-    return { statusCode: 400, body: `Webhook Error: ${err.message}` };
+    return {statusCode: 400, body: `Webhook Error: ${err.message}`};
   }
-
+  // console.log('stripeEvent::', stripeEvent)
   if (stripeEvent.type === "checkout.session.completed") {
     const session = stripeEvent.data.object as StripeCheckoutSession;
 
     console.log("Received checkout session:", session);
 
-    const { data, error } = await supabase.from("payments").insert([
+    const {data, error} = await supabase.from("payments").insert([
       {
         user_id: session.metadata.user_id,
         session_id: session.id,
@@ -60,32 +60,13 @@ const handler: Handler = async (event) => {
       console.error("Supabase insert error:", error);
       return {
         statusCode: 500,
-        body: JSON.stringify({ error: "Database insert failed", details: error }),
+        body: JSON.stringify({error: "Database insert failed", details: error}),
       };
     }
 
     console.log("Payment stored successfully:", data);
-
-    // Update the user's table to set the is_paid flag to true
-    const { data: userData, error: userError } = await supabase
-      .from("users")
-      .update({ is_paid: true })
-      .eq("id", session.metadata.user_id);
-
-    // console.log("Supabase users update response:", { userData, userError });
-
-    if (userError) {
-      console.error("Error updating user payment status:", userError);
-      return {
-        statusCode: 500,
-        body: JSON.stringify({ error: "User update failed", details: userError }),
-      };
-    }
-
-    console.log("User payment status updated successfully:", userData);
   }
+  return {statusCode: 200, body: "Webhook received"}
+}
 
-  return { statusCode: 200, body: "Webhook received" };
-};
-
-export { handler };
+export {handler};
