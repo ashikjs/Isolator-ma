@@ -28,8 +28,8 @@ export default function Checkout({ isPaid }) {
           console.log('Order placed!', response);
           // Clear the free tier usage count since they've upgraded
           sessionStorage.removeItem('calculationCount');
-          setError('')
           navigate('/');
+          setError('')
           setIsLoading(false)
         } else {
           setError('Failed to verify payment')

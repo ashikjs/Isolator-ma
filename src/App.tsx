@@ -17,6 +17,7 @@ import {useAuth} from './contexts/AuthContext';
 import {supabase} from './lib/supabase';
 import {useEffect, useState} from "react";
 import {checkSubscription} from "./utils/subscription.ts";
+import ManageAccount from "./pages/ManageAccount.tsx";
 
 function Navigation() {
   const {user} = useAuth();
@@ -114,6 +115,11 @@ function App() {
         <Route path="/checkout" element={
           <ProtectedRoute requireAuth={true}>
             <Checkout isPaid={isPaid}/>
+          </ProtectedRoute>
+        }/>
+        <Route path="/manage-account" element={
+          <ProtectedRoute requireAuth={true}>
+            <ManageAccount isPaid={isPaid}/>
           </ProtectedRoute>
         }/>
 
